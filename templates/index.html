@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mapa de Restaurantes - Foody Tijuana</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+     integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+     crossorigin=""/>
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Merriweather:ital,wght@0,700;1,400&display=swap" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['DM Sans', 'sans-serif'],
+                        serif: ['Merriweather', 'serif'],
+                    },
+                    colors: {
+                        foody: {
+                            50: '#FDFBF7',
+                            100: '#FAEEDD',
+                            200: '#F5DCC0',
+                            300: '#F0C29E',
+                            400: '#EB9F75',
+                            500: '#E87C4F',
+                            600: '#D65A31',
+                            700: '#B03E24',
+                        },
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        /* Ajustes para el mapa */
+        #map {
+            z-index: 1;
+        }
+        
+        /* Personalización de controles de Leaflet para que coincidan con Foody */
+        .leaflet-bar a {
+            background-color: #FDFBF7 !important;
+            color: #D65A31 !important;
+            border-bottom: 1px solid #F5DCC0 !important;
+        }
+        .leaflet-bar a:hover {
+            background-color: #FAEEDD !important;
+            color: #E87C4F !important;
+        }
+    </style>
+</head>
+<body class="bg-foody-50 h-screen flex flex-col overflow-hidden">
+
+    <!-- Navbar Compacto -->
+    <nav class="bg-white shadow-md z-50 h-16 flex-none">
+        <div class="max-w-7xl mx-auto px-4 h-full flex justify-between items-center">
+            <div class="flex items-center gap-2">
+                <a href="index.html" class="flex items-center gap-2 group">
+                    <div class="bg-foody-500 text-white p-1.5 rounded-lg shadow-sm group-hover:bg-foody-600 transition">
+                        <i class="fa-solid fa-map-location-dot"></i>
+                    </div>
+                    <span class="font-bold text-xl text-foody-800 tracking-tight">Foody Map</span>
+                </a>
+            </div>
+            
+            <!-- Buscador Rápido -->
+            <div class="hidden md:flex flex-1 max-w-md mx-4">
+                <div class="relative w-full">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
+                        <i class="fa-solid fa-search"></i>
+                    </span>
+                    <input type="text" placeholder="¿Qué se te antoja hoy? (Ej. Tacos, Ramen...)" 
+                        class="w-full py-2 pl-10 pr-4 text-sm text-gray-700 bg-foody-50 border border-foody-200 rounded-full focus:outline-none focus:ring-2 focus:ring-foody-500 focus:border-transparent transition-all">
+                </div>
+            </div>
+
+            <div class="flex items-center gap-3">
+                <button class="md:hidden text-foody-600 p-2">
+                    <i class="fa-solid fa-search text-xl"></i>
+                </button>
+                <button class="bg-foody-100 text-foody-700 px-4 py-1.5 rounded-full text-sm font-semibold hover:bg-foody-200 transition flex items-center gap-2">
+                    <i class="fa-solid fa-filter"></i>
+                    <span class="hidden sm:inline">Filtros</span>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Contenedor del Mapa -->
+    <div class="flex-1 relative">
+        <div id="map" class="w-full h-full"></div>
+
+        <!-- Overlay de Categorías Flotante (Abajo) -->
+        <div class="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-[1000] w-full max-w-md px-4 pointer-events-none">
+            <div class="bg-white/90 backdrop-blur-md p-2 rounded-2xl shadow-xl border border-foody-100 flex justify-between items-center pointer-events-auto overflow-x-auto gap-2 no-scrollbar">
+                <!-- Botones de categoría -->
+                <button class="flex flex-col items-center justify-center min-w-[60px] p-2 rounded-xl hover:bg-foody-50 text-gray-500 hover:text-foody-600 transition group">
+                    <div class="bg-orange-100 text-orange-500 p-2 rounded-full mb-1 group-hover:bg-orange-200 transition">
+                        <i class="fa-solid fa-burger"></i>
+                    </div>
+                    <span class="text-[10px] font-bold">Fast Food</span>
+                </button>
+                <button class="flex flex-col items-center justify-center min-w-[60px] p-2 rounded-xl hover:bg-foody-50 text-gray-500 hover:text-foody-600 transition group">
+                    <div class="bg-yellow-100 text-yellow-600 p-2 rounded-full mb-1 group-hover:bg-yellow-200 transition">
+                        <i class="fa-solid fa-utensils"></i>
+                    </div>
+                    <span class="text-[10px] font-bold">Local</span>
+                </button>
+                <button class="flex flex-col items-center justify-center min-w-[60px] p-2 rounded-xl bg-foody-50 text-foody-700 border border-foody-200 shadow-inner">
+                    <div class="bg-foody-500 text-white p-2 rounded-full mb-1">
+                        <i class="fa-solid fa-star"></i>
+                    </div>
+                    <span class="text-[10px] font-bold">Top</span>
+                </button>
+                <button class="flex flex-col items-center justify-center min-w-[60px] p-2 rounded-xl hover:bg-foody-50 text-gray-500 hover:text-foody-600 transition group">
+                    <div class="bg-blue-100 text-blue-500 p-2 rounded-full mb-1 group-hover:bg-blue-200 transition">
+                        <i class="fa-solid fa-beer-mug-empty"></i>
+                    </div>
+                    <span class="text-[10px] font-bold">Bebidas</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+     integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+     crossorigin=""></script>
+
+    <script>
+        // Coordenadas Plaza Río Tijuana
+        const TIJUANA_LAT = 32.527233;
+        const TIJUANA_LNG = -117.020704;
+
+        // Inicializar Mapa
+        // zoomControl: false para poder moverlo de lugar después
+        const map = L.map('map', {
+            zoomControl: false, 
+            center: [TIJUANA_LAT, TIJUANA_LNG],
+            zoom: 15
+        });
+
+        // Capa del Mapa (CartoDB Voyager - Muy limpio, sin ruido)
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+            subdomains: 'abcd',
+            maxZoom: 20
+        }).addTo(map);
+
+        // Añadir control de Zoom en la parte inferior derecha (Más fácil para móviles)
+        L.control.zoom({
+            position: 'bottomright'
+        }).addTo(map);
+
+        // Icono personalizado con colores Foody
+        const foodyIcon = L.divIcon({
+            className: 'custom-div-icon',
+            html: `
+                <div class="relative group">
+                    <div class="absolute -inset-2 bg-foody-500/30 rounded-full animate-ping"></div>
+                    <div class="w-10 h-10 bg-foody-600 rounded-full border-2 border-white shadow-lg flex items-center justify-center text-white transform transition hover:scale-110 hover:-translate-y-1">
+                        <i class="fa-solid fa-utensils"></i>
+                    </div>
+                    <div class="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[8px] border-t-foody-600"></div>
+                </div>
+            `,
+            iconSize: [40, 40],
+            iconAnchor: [20, 40]
+        });
+
+        // Marcador en Plaza Río
+        const marker = L.marker([TIJUANA_LAT, TIJUANA_LNG], { icon: foodyIcon }).addTo(map);
+
+        // Popup personalizado
+        marker.bindPopup(`
+            <div class="text-center p-1">
+                <h3 class="font-bold text-foody-800 text-lg font-serif">Zona Gastronómica Río</h3>
+                <p class="text-sm text-gray-600 mb-2">Punto de partida</p>
+                <button class="bg-foody-500 text-white text-xs px-3 py-1 rounded-full hover:bg-foody-600 w-full">Ver Restaurantes</button>
+            </div>
+        `);
+
+        // Simular otro marcador cercano
+        const tacoIcon = L.divIcon({
+            className: 'custom-div-icon',
+            html: `
+                <div class="w-8 h-8 bg-white rounded-full border-2 border-foody-500 shadow-md flex items-center justify-center text-foody-600 hover:bg-foody-50 transition">
+                    <i class="fa-solid fa-pepper-hot text-sm"></i>
+                </div>
+            `,
+            iconSize: [32, 32],
+            iconAnchor: [16, 16]
+        });
+
+        L.marker([32.52873496342878, -117.0278260067511], { icon: tacoIcon }).addTo(map)
+            .bindPopup('<b class="text-foody-700">Tacos El Franc</b><br>Tacos de asada y adobada.');
+
+    </script>
+</body>
+</html>
